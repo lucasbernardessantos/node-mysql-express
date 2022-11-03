@@ -41,7 +41,7 @@ app.post('/cadastrarPessoa', (req, res) => {
     let data = req.body;
     let pessoa = new Pessoa_js_1.Pessoa(data.nome, new Date(data.nascimento), data.cpf, data.saldoBancario);
     let conn = db_js_1.Connection.criarConexao();
-    let sql = `insert into pessoa values ("${pessoa.Nome}", "${pessoa.nascimentoString()}", "${pessoa.CPF}", ${pessoa.Saldo});`;
+    let sql = `insert into usuarios.pessoa values ("${pessoa.Nome}", "${pessoa.nascimentoString()}", "${pessoa.CPF}", ${pessoa.Saldo});`;
     conn.connect(err => {
         if (err) {
             console.error(`Error connecting: ${err.stack}`);
@@ -53,5 +53,42 @@ app.post('/cadastrarPessoa', (req, res) => {
         if (err)
             throw err;
         res.status(200).send(`Pessoa cadastrada: ${result.affectedRows} linha afetada.`);
+    });
+    conn.end();
+});
+app.delete('/deletarPessoa', (req, res) => {
+    let pessoa = req.body;
+    let sql = `delete from usuarios.pessoa where cpf = ${pessoa.cpf}`;
+    let conn = db_js_1.Connection.criarConexao();
+    conn.connect(err => {
+        if (err) {
+            console.error(`Error connecting: ${err.stack}`);
+            return;
+        }
+        console.log(`Connected as id: ${conn.threadId}`);
+    });
+    conn.query(sql, (err, result) => {
+        if (err)
+            throw err;
+        res.status(200).send(`Pessoa deletada: ${result.affectedRows} linha afetada.`);
+    });
+    conn.end();
+});
+app.put('/atualizarPessoa', (req, res) => {
+    let data = req.body;
+    let pessoa = new Pessoa_js_1.Pessoa(data.nome, new Date(data.nascimento), data.cpf, data.saldoBancario);
+    let conn = db_js_1.Connection.criarConexao();
+    let sql = `update usuarios.pessoa set nome = "${pessoa.Nome}", nascimento = "${pessoa.nascimentoString()}", saldoBancario = "${pessoa.Saldo}" where cpf = "${pessoa.CPF}"`;
+    conn.connect(err => {
+        if (err) {
+            console.error(`Error connecting: ${err.stack}`);
+            return;
+        }
+        console.log(`Connected as id: ${conn.threadId}`);
+    });
+    conn.query(sql, (err, result) => {
+        if (err)
+            throw err;
+        res.status(200).send(`Pessoa atualizada: ${result.affectedRows} linha afetada.`);
     });
 });
