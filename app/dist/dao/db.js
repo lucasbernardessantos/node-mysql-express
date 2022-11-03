@@ -4,16 +4,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Connection = void 0;
-const mysql_1 = __importDefault(require("mysql"));
+const mysql2_1 = __importDefault(require("mysql2"));
 class Connection {
     static criarConexao() {
         let info = {
             host: 'localhost',
             user: 'root',
-            passowrd: '',
+            password: '',
             database: 'usuarios'
         };
-        return mysql_1.default.createConnection(info);
+        return mysql2_1.default.createConnection(info);
     }
 }
 exports.Connection = Connection;

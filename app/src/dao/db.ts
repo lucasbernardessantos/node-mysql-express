@@ -1,11 +1,11 @@
-import mysql from 'mysql'
+import mysql from 'mysql2'
 
 export class Connection {
   static criarConexao(): mysql.Connection {
     let info = {
       host: 'localhost',
       user: 'root',
-      passowrd: '',
+      password: '',
       database: 'usuarios'
     }
     return mysql.createConnection(info)

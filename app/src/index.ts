@@ -1,5 +1,7 @@
 import express, { Request, Response } from 'express'
-import { PessoaDAO } from './dao/PessoaDAO.js'
+import { MysqlError } from 'mysql'
+import { OkPacket, QueryError } from 'mysql2'
+import { Connection } from './dao/db.js'
 import { IPessoa } from './interface/IPessoa.js'
 import { Pessoa } from './model/Pessoa.js'
 
@@ -16,22 +18,53 @@ app.get('/', (req: Request, res: Response) => {
   res.status(200).send('Conexão aberta.')
 })
 
-app.post('/cadastrarPessoa', (req: Request, res: Response) => {
-  let data:IPessoa = req.body
+app.get('/selecionarPessoas', (req: Request, res: Response) => { 
+  let conn = Connection.criarConexao()
+  let pessoasArray: Pessoa[] = []
+  let sql = `select * from usuarios.pessoa;`
 
-  let nascimento = formatarData(data.nascimento.toString())
+  conn.connect(err => {
+    if(err) {
+      console.error(`Error connecting: ${err.stack}`)
+      return
+    }
+    console.log(`Connected as id: ${conn.threadId}`)
+  })
 
-  let pessoa = new Pessoa(data.nome, nascimento, data.cpf, data.saldo)
-
-  PessoaDAO.cadastrarPessoa(pessoa)
-  res.status(200).send(`Dados Chegaram.`)
+  conn.query(sql, function (err: MysqlError, result: IPessoa[])  {
+    if(err) throw err    
+    result.forEach(InPessoa => {
+      let pessoa = new Pessoa(
+        InPessoa.nome,
+        new Date(InPessoa.nascimento),
+        InPessoa.cpf,
+        InPessoa.saldoBancario
+      )  
+      pessoasArray.push(pessoa) 
+    })
+    res.status(200).send(JSON.stringify(pessoasArray))
+  })
+  conn.end()
 })
 
-function formatarData(data: string): Date { // ata está chegando no formato dd-MM-yyyy
-  let vetorData = data.split('-', 3) // Vetor ["dd", "MM", "yyyy"]
-  let dataString = `${vetorData[1]}-${vetorData[0]}-${vetorData[2]}` // MM/dd/yyyy
+app.post('/cadastrarPessoa', (req: Request, res: Response) => {
+  let data:IPessoa = req.body
+  let pessoa = new Pessoa(data.nome, new Date(data.nascimento), data.cpf, data.saldoBancario)
+  let conn = Connection.criarConexao()
+  let sql = `insert into pessoa values ("${pessoa.Nome}", "${pessoa.nascimentoString()}", "${pessoa.CPF}", ${pessoa.Saldo});`
+   
+  conn.connect(err => {
+    if(err) {
+      console.error(`Error connecting: ${err.stack}`)
+      return
+    }
+    console.log(`Connected as id: ${conn.threadId}`)
+  })
 
-  let dataFormatada = new Date(dataString)
+    
+  conn.query(sql, (err: QueryError, result: OkPacket) => {
+    if(err) throw err
 
-  return dataFormatada
-}
+    res.status(200).send(`Pessoa cadastrada: ${result.affectedRows} linha afetada.`)
+  })
+})
